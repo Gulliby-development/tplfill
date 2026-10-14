@@ -18,10 +18,10 @@ cargo build --release
 ```
 usage: tplfill render [--data FILE]... [-D NAME=VALUE]... [--strict] [-o FILE] TEMPLATE
        tplfill vars TEMPLATE
-       tplfill check [--data FILE]... [-D NAME=VALUE]... TEMPLATE
+       tplfill check [--data FILE]... [-D NAME=VALUE]... [--ignore CODE]... TEMPLATE
 ```
 
-FILE and TEMPLATE are paths or `-` (standard input). `render` prints the filled template, or writes it to the `-o` file. With `--strict` an undefined variable is an error. `vars` prints the names a template uses. `check` compares the template with the data and reports problems.
+FILE and TEMPLATE are paths or `-` (standard input). `render` prints the filled template, or writes it to the `-o` file. With `--strict` an undefined variable is an error. `vars` prints the names a template uses. `check` compares the template with the data and reports problems; `--ignore CODE` (repeatable, `check` only) leaves out the problems with that check code (`TP001` to `TP004`).
 
 Example inputs. `page.tpl`:
 
@@ -104,6 +104,18 @@ bad.tpl:4:21: TP003 "i" is not a list
 bad.tpl: TP004 variable "extra" is never used
 5 problems
 ```
+
+`tplfill check --data bad.vars --ignore TP004 bad.tpl` prints:
+
+```
+bad.tpl:1:7: TP001 undefined variable "nme"
+bad.tpl:2:1: TP003 "name" is not a list
+bad.tpl:3:8: TP002 "items" is a list; use the join filter
+bad.tpl:4:21: TP003 "i" is not a list
+4 problems
+```
+
+When every problem is ignored, `check` prints `ok, V variables used` and exits 0.
 
 ## Data files
 

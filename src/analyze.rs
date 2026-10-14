@@ -134,18 +134,32 @@ pub fn used_names(template: &Template) -> BTreeSet<String> {
 
 /// Problem lines: TP001 to TP003 sorted by position, then TP004 by name.
 pub fn check(template: &Template, display: &str, data: &Data) -> Vec<String> {
+    check_ignoring(template, display, data, &[])
+}
+
+/// Problem lines excluding any findings with an ignored check code.
+pub fn check_ignoring(
+    template: &Template,
+    display: &str,
+    data: &Data,
+    ignore: &[String],
+) -> Vec<String> {
+    let is_ignored = |code: &str| ignore.iter().any(|ignored| ignored.as_str() == code);
     let w = walk(template, data);
     let mut problems = w.problems;
     problems.sort_by(|a, b| (a.line, a.col, a.code).cmp(&(b.line, b.col, b.code)));
     let mut lines: Vec<String> = Vec::new();
     for p in &problems {
+        if is_ignored(p.code) {
+            continue;
+        }
         let line = format!("{display}:{}:{}: {} {}", p.line, p.col, p.code, p.message);
         if !lines.contains(&line) {
             lines.push(line);
         }
     }
     for name in data.keys() {
-        if !w.names.contains(name) {
+        if !is_ignored("TP004") && !w.names.contains(name) {
             lines.push(format!(
                 "{display}: TP004 variable \"{name}\" is never used"
             ));

@@ -1,13 +1,13 @@
 use std::io::{Read, Write};
 
-use crate::analyze::{check, used_names};
+use crate::analyze::{check_ignoring, used_names};
 use crate::args::{Command, Options, parse_args};
 use crate::data::parse_data;
 use crate::parser::parse_template;
 use crate::render::render;
 use crate::value::{Data, merge, set_text};
 
-const USAGE: &str = "usage: tplfill render [--data FILE]... [-D NAME=VALUE]... [--strict] [-o FILE] TEMPLATE\n       tplfill vars TEMPLATE\n       tplfill check [--data FILE]... [-D NAME=VALUE]... TEMPLATE\n";
+const USAGE: &str = "usage: tplfill render [--data FILE]... [-D NAME=VALUE]... [--strict] [-o FILE] TEMPLATE\n       tplfill vars TEMPLATE\n       tplfill check [--data FILE]... [-D NAME=VALUE]... [--ignore CODE]... TEMPLATE\n";
 
 fn display_name(name: &str) -> String {
     if name == "-" {
@@ -58,7 +58,7 @@ fn execute(opts: &Options, stdin: &mut dyn Read) -> Result<(String, i32), String
         set_text(&mut data, name, value);
     }
     if opts.command == Command::Check {
-        let lines = check(&template, &display, &data);
+        let lines = check_ignoring(&template, &display, &data, &opts.ignore);
         if lines.is_empty() {
             let v = used_names(&template).len();
             let noun = if v == 1 { "variable" } else { "variables" };
