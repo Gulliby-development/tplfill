@@ -13,9 +13,20 @@ pub struct Options {
     pub command: Command,
     pub data_files: Vec<String>,
     pub defines: Vec<(String, String)>,
+    pub ignore: Vec<String>,
     pub template: String,
     pub strict: bool,
     pub output: Option<String>,
+}
+
+fn validate_ignore(value: &str) -> Result<(), String> {
+    if matches!(value, "TP001" | "TP002" | "TP003" | "TP004") {
+        Ok(())
+    } else {
+        Err(format!(
+            "invalid --ignore \"{value}\" (expected TP001, TP002, TP003 or TP004)"
+        ))
+    }
 }
 
 pub fn parse_args(args: &[String]) -> Result<Options, String> {
@@ -28,6 +39,7 @@ pub fn parse_args(args: &[String]) -> Result<Options, String> {
                 command: Command::Help,
                 data_files: Vec::new(),
                 defines: Vec::new(),
+                ignore: Vec::new(),
                 template: String::new(),
                 strict: false,
                 output: None,
@@ -42,6 +54,7 @@ pub fn parse_args(args: &[String]) -> Result<Options, String> {
     let is_render = command == Command::Render;
     let mut data_files = Vec::new();
     let mut defines = Vec::new();
+    let mut ignore = Vec::new();
     let mut template: Option<String> = None;
     let mut strict = false;
     let mut output = None;
@@ -72,6 +85,15 @@ pub fn parse_args(args: &[String]) -> Result<Options, String> {
                 return Err(bad());
             }
             defines.push((name.to_string(), text.to_string()));
+        } else if command == Command::Check && arg == "--ignore" {
+            let value = value_of("--ignore")?;
+            validate_ignore(&value)?;
+            ignore.push(value);
+        } else if command == Command::Check
+            && let Some(value) = arg.strip_prefix("--ignore=")
+        {
+            validate_ignore(value)?;
+            ignore.push(value.to_string());
         } else if is_render && arg == "--strict" {
             strict = true;
         } else if is_render && arg == "-o" {
@@ -99,6 +121,7 @@ pub fn parse_args(args: &[String]) -> Result<Options, String> {
         command,
         data_files,
         defines,
+        ignore,
         template,
         strict,
         output,

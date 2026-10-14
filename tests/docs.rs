@@ -4,7 +4,7 @@ use std::path::Path;
 const USAGE: [&str; 3] = [
     "usage: tplfill render [--data FILE]... [-D NAME=VALUE]... [--strict] [-o FILE] TEMPLATE",
     "       tplfill vars TEMPLATE",
-    "       tplfill check [--data FILE]... [-D NAME=VALUE]... TEMPLATE",
+    "       tplfill check [--data FILE]... [-D NAME=VALUE]... [--ignore CODE]... TEMPLATE",
 ];
 
 const PAGE_TPL: &str = r##"# {{ project | upper }}
