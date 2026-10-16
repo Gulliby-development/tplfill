@@ -17,7 +17,7 @@ fn run_args(items: &[&str]) -> (String, String, i32) {
     )
 }
 
-const USAGE: &str = "usage: tplfill render [--data FILE]... [-D NAME=VALUE]... [--strict] [-o FILE] TEMPLATE\n       tplfill vars TEMPLATE\n       tplfill check [--data FILE]... [-D NAME=VALUE]... [--ignore CODE]... TEMPLATE\n";
+const USAGE: &str = "usage: tplfill render [--data FILE]... [-D NAME=VALUE]... [--strict] [-o FILE] TEMPLATE\n       tplfill vars TEMPLATE\n       tplfill check [--data FILE]... [-D NAME=VALUE]... [--ignore CODE]... [--format text|json] TEMPLATE\n";
 
 #[test]
 fn error_table() {

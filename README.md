@@ -18,7 +18,7 @@ cargo build --release
 ```
 usage: tplfill render [--data FILE]... [-D NAME=VALUE]... [--strict] [-o FILE] TEMPLATE
        tplfill vars TEMPLATE
-       tplfill check [--data FILE]... [-D NAME=VALUE]... [--ignore CODE]... TEMPLATE
+       tplfill check [--data FILE]... [-D NAME=VALUE]... [--ignore CODE]... [--format text|json] TEMPLATE
 ```
 
 FILE and TEMPLATE are paths or `-` (standard input). `render` prints the filled template, or writes it to the `-o` file. With `--strict` an undefined variable is an error. `vars` prints the names a template uses. `check` compares the template with the data and reports problems; `--ignore CODE` (repeatable, `check` only) leaves out the problems with that check code (`TP001` to `TP004`).
@@ -116,6 +116,22 @@ bad.tpl:4:21: TP003 "i" is not a list
 ```
 
 When every problem is ignored, `check` prints `ok, V variables used` and exits 0.
+
+`--format json` (`check` only; the values are `text`, the default, and `json`) prints the result as one JSON document instead of the lines above, for scripts and CI annotations. The exit code does not change. `tplfill check --data bad.vars --format json bad.tpl` prints:
+
+```
+{
+  "problems": [
+    {"file": "bad.tpl", "line": 1, "column": 7, "code": "TP001", "message": "undefined variable \"nme\""},
+    {"file": "bad.tpl", "line": 2, "column": 1, "code": "TP003", "message": "\"name\" is not a list"},
+    {"file": "bad.tpl", "line": 3, "column": 8, "code": "TP002", "message": "\"items\" is a list; use the join filter"},
+    {"file": "bad.tpl", "line": 4, "column": 21, "code": "TP003", "message": "\"i\" is not a list"},
+    {"file": "bad.tpl", "line": null, "column": null, "code": "TP004", "message": "variable \"extra\" is never used"}
+  ],
+  "count": 5,
+  "variables": 4
+}
+```
 
 ## Data files
 

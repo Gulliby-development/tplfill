@@ -11,6 +11,14 @@ struct Problem {
     message: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Finding {
+    line: Option<usize>,
+    column: Option<usize>,
+    code: &'static str,
+    message: String,
+}
+
 struct Walker<'a> {
     data: &'a Data,
     bound: Vec<String>,
@@ -144,26 +152,117 @@ pub fn check_ignoring(
     data: &Data,
     ignore: &[String],
 ) -> Vec<String> {
+    findings(template, data, ignore)
+        .into_iter()
+        .map(|finding| match (finding.line, finding.column) {
+            (Some(line), Some(column)) => format!(
+                "{display}:{line}:{column}: {} {}",
+                finding.code, finding.message
+            ),
+            _ => format!("{display}: {} {}", finding.code, finding.message),
+        })
+        .collect()
+}
+
+/// JSON document and count of nonignored problems for a template.
+pub fn check_json(
+    template: &Template,
+    display: &str,
+    data: &Data,
+    ignore: &[String],
+) -> (String, usize) {
+    let file = if display == "-" {
+        "<stdin>".to_string()
+    } else {
+        display.replace('\\', "/")
+    };
+    let problems = findings(template, data, ignore);
+    let count = problems.len();
+    let variables = used_names(template).len();
+    let mut out = String::from("{\n");
+    if problems.is_empty() {
+        out.push_str("  \"problems\": [],\n");
+    } else {
+        out.push_str("  \"problems\": [\n");
+        for (index, problem) in problems.iter().enumerate() {
+            out.push_str("    {\"file\": \"");
+            out.push_str(&escape_json(&file));
+            out.push_str("\", \"line\": ");
+            push_optional_number(&mut out, problem.line);
+            out.push_str(", \"column\": ");
+            push_optional_number(&mut out, problem.column);
+            out.push_str(", \"code\": \"");
+            out.push_str(&escape_json(problem.code));
+            out.push_str("\", \"message\": \"");
+            out.push_str(&escape_json(&problem.message));
+            out.push_str("\"}");
+            if index + 1 < problems.len() {
+                out.push(',');
+            }
+            out.push('\n');
+        }
+        out.push_str("  ],\n");
+    }
+    out.push_str(&format!(
+        "  \"count\": {count},\n  \"variables\": {variables}\n}}\n"
+    ));
+    (out, count)
+}
+
+fn findings(template: &Template, data: &Data, ignore: &[String]) -> Vec<Finding> {
     let is_ignored = |code: &str| ignore.iter().any(|ignored| ignored.as_str() == code);
     let w = walk(template, data);
     let mut problems = w.problems;
     problems.sort_by(|a, b| (a.line, a.col, a.code).cmp(&(b.line, b.col, b.code)));
-    let mut lines: Vec<String> = Vec::new();
-    for p in &problems {
-        if is_ignored(p.code) {
+    let mut findings = Vec::new();
+    for problem in problems {
+        if is_ignored(problem.code) {
             continue;
         }
-        let line = format!("{display}:{}:{}: {} {}", p.line, p.col, p.code, p.message);
-        if !lines.contains(&line) {
-            lines.push(line);
+        let finding = Finding {
+            line: Some(problem.line),
+            column: Some(problem.col),
+            code: problem.code,
+            message: problem.message,
+        };
+        if !findings.contains(&finding) {
+            findings.push(finding);
         }
     }
     for name in data.keys() {
         if !is_ignored("TP004") && !w.names.contains(name) {
-            lines.push(format!(
-                "{display}: TP004 variable \"{name}\" is never used"
-            ));
+            findings.push(Finding {
+                line: None,
+                column: None,
+                code: "TP004",
+                message: format!("variable \"{name}\" is never used"),
+            });
         }
     }
-    lines
+    findings
+}
+
+fn push_optional_number(out: &mut String, number: Option<usize>) {
+    match number {
+        Some(number) => out.push_str(&number.to_string()),
+        None => out.push_str("null"),
+    }
+}
+
+fn escape_json(value: &str) -> String {
+    let mut out = String::with_capacity(value.len());
+    for character in value.chars() {
+        match character {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            character if character <= '\u{1f}' => {
+                out.push_str(&format!("\\u{:04x}", character as u32));
+            }
+            character => out.push(character),
+        }
+    }
+    out
 }

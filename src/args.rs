@@ -8,6 +8,12 @@ pub enum Command {
     Check,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CheckFormat {
+    Text,
+    Json,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Options {
     pub command: Command,
@@ -17,6 +23,17 @@ pub struct Options {
     pub template: String,
     pub strict: bool,
     pub output: Option<String>,
+    pub format: CheckFormat,
+}
+
+fn validate_format(value: &str) -> Result<CheckFormat, String> {
+    match value {
+        "text" => Ok(CheckFormat::Text),
+        "json" => Ok(CheckFormat::Json),
+        _ => Err(format!(
+            "invalid --format \"{value}\" (expected text or json)"
+        )),
+    }
 }
 
 fn validate_ignore(value: &str) -> Result<(), String> {
@@ -43,6 +60,7 @@ pub fn parse_args(args: &[String]) -> Result<Options, String> {
                 template: String::new(),
                 strict: false,
                 output: None,
+                format: CheckFormat::Text,
             });
         }
         "render" => Command::Render,
@@ -55,6 +73,7 @@ pub fn parse_args(args: &[String]) -> Result<Options, String> {
     let mut data_files = Vec::new();
     let mut defines = Vec::new();
     let mut ignore = Vec::new();
+    let mut format = CheckFormat::Text;
     let mut template: Option<String> = None;
     let mut strict = false;
     let mut output = None;
@@ -94,6 +113,12 @@ pub fn parse_args(args: &[String]) -> Result<Options, String> {
         {
             validate_ignore(value)?;
             ignore.push(value.to_string());
+        } else if command == Command::Check && arg == "--format" {
+            format = validate_format(&value_of("--format")?)?;
+        } else if command == Command::Check
+            && let Some(value) = arg.strip_prefix("--format=")
+        {
+            format = validate_format(value)?;
         } else if is_render && arg == "--strict" {
             strict = true;
         } else if is_render && arg == "-o" {
@@ -125,5 +150,6 @@ pub fn parse_args(args: &[String]) -> Result<Options, String> {
         template,
         strict,
         output,
+        format,
     })
 }
