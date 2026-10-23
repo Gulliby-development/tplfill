@@ -43,6 +43,20 @@ pub fn apply_filter(filter: &Filter, value: Value) -> Result<Value, String> {
             }
             _ => Err(needs_list()),
         },
+        "sort" | "reverse" | "unique" => match value {
+            Value::List(mut l) => {
+                match name {
+                    "sort" => l.sort(),
+                    "reverse" => l.reverse(),
+                    _ => {
+                        let mut seen = std::collections::HashSet::new();
+                        l.retain(|item| seen.insert(item.clone()));
+                    }
+                }
+                Ok(Value::List(l))
+            }
+            _ => Err(needs_list()),
+        },
         "join" => match value {
             Value::List(l) => Ok(Value::Text(l.join(arg))),
             _ => Err(needs_list()),
