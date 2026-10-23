@@ -142,6 +142,7 @@ A data file is UTF-8 (one leading BOM is skipped). Empty lines and lines startin
 - Text is copied unchanged. `{{ EXPR }}` writes a value, `{% TAG %}` is a block tag and `{# ... #}` is a comment that writes nothing.
 - A block tag or comment alone on its line is removed together with its blanks and line ending.
 - An expression is a name or a string literal followed by filters: `upper`, `lower`, `trim`, `len`, `first`, `last`, `join:"SEP"` and `default:"X"`.
+- `sort`, `reverse` and `unique` take a list and return a list: `sort` orders the items by their UTF-8 bytes, `reverse` turns the order around and `unique` keeps the first of each repeated item. End the chain with `join`, `len`, `first` or `last`, as in `{{ tags | unique | sort | join:", " }}`. On text they stop with `filter "sort" needs a list` (or `reverse`, `unique`).
 - `{% if COND %}` ... `{% else %}` ... `{% end %}` where COND is `NAME`, `not NAME`, `NAME == "TEXT"` or `NAME != "TEXT"`.
 - `{% for X in NAME %}` ... `{% end %}` runs once per item of a list. Inside, `loop.index`, `loop.first` and `loop.last` are available.
 - Errors are reported as `FILE:LINE:COL: MESSAGE` at the opening of the tag.
