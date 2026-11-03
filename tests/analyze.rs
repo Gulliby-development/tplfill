@@ -206,7 +206,12 @@ fn check_list_data_from_file() {
         assert_eq!(err, "", "template {template:?}");
         assert_eq!(code, 0, "template {template:?}");
     }
-    let bad_cases: &[&str] = &["{{ xs }}", "{{ xs | upper }}", "{{ xs | trim }}"];
+    let bad_cases: &[&str] = &[
+        "{{ xs }}",
+        "{{ xs | upper }}",
+        "{{ xs | trim }}",
+        "{{ xs | title }}",
+    ];
     let expected = "<stdin>:1:1: TP002 \"xs\" is a list; use the join filter\n1 problem\n";
     for template in bad_cases {
         let (code, out, err) = run_cli(&["check", "--data", &data_arg, "-"], template);

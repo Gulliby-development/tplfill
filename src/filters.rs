@@ -31,6 +31,22 @@ pub fn apply_filter(filter: &Filter, value: Value) -> Result<Value, String> {
             })),
             _ => Err(needs_text()),
         },
+        "title" => match value {
+            Value::Text(t) => {
+                let mut out = String::with_capacity(t.len());
+                let mut word_start = true;
+                for c in t.chars() {
+                    out.push(if word_start {
+                        c.to_ascii_uppercase()
+                    } else {
+                        c.to_ascii_lowercase()
+                    });
+                    word_start = c == ' ' || c == '\t';
+                }
+                Ok(Value::Text(out))
+            }
+            _ => Err(needs_text()),
+        },
         "len" => match value {
             Value::Text(t) => Ok(Value::Text(t.chars().count().to_string())),
             Value::List(l) => Ok(Value::Text(l.len().to_string())),
