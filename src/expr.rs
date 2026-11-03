@@ -109,9 +109,8 @@ impl Scanner {
 /// none, None for an unknown filter.
 pub fn filter_needs_arg(name: &str) -> Option<bool> {
     match name {
-        "upper" | "lower" | "trim" | "len" | "first" | "last" | "sort" | "reverse" | "unique" => {
-            Some(false)
-        }
+        "upper" | "lower" | "trim" | "title" | "len" | "first" | "last" | "sort" | "reverse"
+        | "unique" => Some(false),
         "join" | "default" => Some(true),
         _ => None,
     }
